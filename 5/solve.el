@@ -30,8 +30,6 @@
   stacks
   ))
 
-(if t (message "hi"))
-
 (defun make-word (stacks)
   (apply #'string (mapcar #'first stacks)))
 
