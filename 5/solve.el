@@ -1,17 +1,7 @@
 ;; find correct datatype
-(setq stacks '((?Z ?C ?D) (?A ?B ?C)))
 
 (defun move (from to stacks)
   (push (pop (nth from stacks)) (nth to stacks)))
-
-(move 1 0 1 stacks)
-
-;; parse stackdata
-(setq stackdata "
-[A] [B]
-[C] [D] [E] [Z]
- 1   2   3   4
-")
 
 (defun read-lines (data)
   (seq-filter (-compose #'not #'string-empty-p) (split-string data "\n")))
@@ -32,51 +22,63 @@
   (dolist (line lines)
     (setq i 1)
     (while (< i (length line))
-      (push (aref line i) (nth (/ (- i 1) 4) stacks))
+      (let ((char (aref line i)))
+        (if (not (= char 32)) (push char (nth (/ (- i 1) 4) stacks)))
+        )
       (setq i (+ i 4)))
   )
   stacks
   ))
 
+(if t (message "hi"))
+
 (defun make-word (stacks)
   (apply #'string (mapcar #'first stacks)))
 
-;; parse movedata
+(cl-defstruct instruction n from to)
 
-(setq movedata "
-move 3 from 12 to 11
-move 1 from 7 to 10
-")
+(defun parse-instruction (line)
+  (save-match-data
+    (string-match "move \\([[:digit:]]+\\) from \\([[:digit:]]+\\) to \\([[:digit:]]+\\)" line)
+    (make-instruction :n (string-to-number (match-string 1 line)) :from (string-to-number (match-string 2 line)) :to (string-to-number (match-string 3 line)))))
 
-(read-lines movedata)
+;; test
 
-(setq line (first (read-lines movedata)))
+(cl-defstruct problem stacks instructions)
 
-(save-match-data
-  (string-match "move \\([[:digit:]]+\\) from \\([[:digit:]]+\\) to \\([[:digit:]]+\\)" line)
-  (setq n (match-string 1 line) from (match-string 2 line) to (match-string 3 line)))
+(defun parse-problem (fn)
+  (with-temp-buffer (insert-file-contents fn)
+     (let ((parts (split-string (buffer-string) "\n\n")))
+       (make-problem
+        :stacks (load-lines (nth 0 parts))
+        :instructions 
+        (mapcar #'parse-instruction (read-lines (nth 1 parts)))
+        ))))
 
-n
-
-
-
-(setq line (nth 1 (read-lines stack-data)))
-
-(setq stacks nil)
-(dotimes (i 3) (push nil stacks))
-
-stacks
+(parse-problem "test")
 
 
+(defun apply-instruction (instruction stacks)
+  (dotimes
+      (ix (instruction-n instruction))
+    (move (1- (instruction-from instruction)) (1- (instruction-to instruction)) stacks)))
+
+(defun solve-problem (problem)
+    (dolist (instruction (problem-instructions problem))
+      (apply-instruction instruction (problem-stacks problem)))
+    (make-word (problem-stacks problem)))
+
+(solve-problem (parse-problem "test"))
+(solve-problem (parse-problem "input"))
+
+;; part II
 
 
+(defun apply-instruction (instruction stacks)
+  (dolist (item (reverse (mapcar (lambda (x) (pop (nth
+                                 (1- (instruction-from instruction)) stacks)))
+                                 (number-sequence 1 (instruction-n instruction)))))
+    (push item (nth (1- (instruction-to instruction)) stacks))))
 
-
-
-(push ?A (nth 2 stacks))
-
-stacks
-
-(pop x)
-
-x
+(solve-problem (parse-problem "test"))
+(solve-problem (parse-problem "input"))
