@@ -50,4 +50,26 @@
 ;; part B
 
 
+(setq states (collect-states instructions))
+
+(defun draw-position (value position)
+;;  (message "value %d position %d" value position)
+  (if (>= 1 (abs (- (mod position 40) value))) ?# ?.))
+
+(defun output-characters (states)
+  (loop for position in
+        (number-sequence 0 (- (length states) 1)) collect
+        (draw-position (state-value (nth position (cons start states))) position)))
+
+(defun formatted-output (states)
+  (let ((characters (output-characters states)))
+    (dotimes (row (/ (length characters) 40))
+      (message (concat (-slice characters (* row 40) (* (1+ row) 40))))
+      )))
+
+(formatted-output (collect-states (parse-instructions "test")))
+
+
+
+
 
